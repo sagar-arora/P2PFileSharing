@@ -1,0 +1,22 @@
+{
+  "numberOfPreferredNeighbors" : 2,
+  "unchokingInterval" : 5,
+  "optimisticUnchokingInterval" : 15,
+  "fileName" : "TheFile.dat",
+  "fileSize" : 10000232,
+  "pieceSize" : 32768,
+  "peers" : [
+    {
+      "peerId" : 1001,
+      "address" : "localhost",
+      "port" : 6008,
+      "hasFile": true
+    },
+    {
+      "peerId" : 1002,
+      "address" : "localhost",
+      "port" : 6009,
+      "hasFile": true
+    }
+  ]
+}
