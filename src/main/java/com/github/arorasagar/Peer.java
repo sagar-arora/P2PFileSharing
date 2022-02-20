@@ -2,18 +2,19 @@ package com.github.arorasagar;
 
 public class Peer {
 
-    private int peerId;
-    private String address;
-    private String port;
-    private boolean hasFile;
-    public Peer(int peerId, String address, String port, boolean hasFile) {
+    protected Integer peerId;
+    protected String address;
+    protected int port;
+    protected boolean hasFile;
+
+    public Peer(int peerId, String address, int port, boolean hasFile) {
         this.address = address;
         this.peerId = peerId;
         this.port = port;
         this.hasFile = hasFile;
     }
 
-    public int getPeerId() {
+    public Integer getPeerId() {
         return peerId;
     }
 
@@ -29,11 +30,11 @@ public class Peer {
         this.address = address;
     }
 
-    public String getPort() {
+    public int getPort() {
         return port;
     }
 
-    public void setPort(String port) {
+    public void setPort(int port) {
         this.port = port;
     }
 

@@ -4,7 +4,7 @@ import java.io.*;
 
 public class Message {
 
-    public static int MESSAGE_LENGTH_SIZE = 4;
+    public static int MESSAGE_HEADER_LENGTH = 4;
     public static int TYPE_SIZE = 1;
     int length;
     MessageType messageType;
@@ -58,13 +58,13 @@ public class Message {
         return byteArrayOutputStream.toByteArray();
     }
 
-    public Message readMessageBytes(byte[] message) throws IOException {
+    public static Message readMessageBytes(byte[] message) throws IOException {
 
         DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(message));
         int length = dataInputStream.readInt();
-        int type = (int)dataInputStream.readByte();
+        int type = (int) dataInputStream.readByte();
         byte[] payload = new byte[length];
-        dataInputStream.read(payload, Message.MESSAGE_LENGTH_SIZE + Message.TYPE_SIZE, length);
+        dataInputStream.read(payload, Message.MESSAGE_HEADER_LENGTH + Message.TYPE_SIZE, length);
 
         return new Message(length, MessageType.fromType(type), payload);
     }

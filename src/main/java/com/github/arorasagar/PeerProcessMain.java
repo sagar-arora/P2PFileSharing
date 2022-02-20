@@ -2,6 +2,8 @@ package com.github.arorasagar;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
 
 public class PeerProcessMain {
 
@@ -21,16 +23,18 @@ public class PeerProcessMain {
             PeerProcessMain peerProcessMain = new PeerProcessMain(new File("config.json"));
 
             Peer peer = null;
+            Collection<RemotePeerInfo> peersToConnectTo = new LinkedList<>();
             for (Peer currentPeer: peerProcessConfig.getPeers()) {
                 if (currentPeer.getPeerId() == peerId) {
                     peer = currentPeer;
                     break;
                 }
+                peersToConnectTo.add((RemotePeerInfo) currentPeer);
             }
 
             assert peer != null;
 
-            PeerProcessManager peerProcessManager = new PeerProcessManager(peerProcessConfig, peer);
+            PeerProcessManager peerProcessManager = new PeerProcessManager(peerProcessConfig, peer, peersToConnectTo);
             peerProcessManager.start();
         } catch (InvalidFileException e) {
             e.printStackTrace();
