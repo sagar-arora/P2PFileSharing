@@ -8,12 +8,13 @@ public enum MessageType {
     HAVE(4),
     BITFIELD(5),
     REQUESTED(6),
-    FIELD(7);
+    FIELD(7),
+    HANDSHAKE(8);
 
-    int type;
+    byte type;
 
     MessageType(int type) {
-        this.type = type;
+        this.type = (byte) type;
     }
 
     public int getType() {
@@ -37,7 +38,11 @@ public enum MessageType {
                 break;
             case 6: messageType = REQUESTED;
                 break;
-           // case 7: messageType =
+            case 7: messageType = FIELD;
+                break;
+            default:
+
+
         }
         return messageType;
     }

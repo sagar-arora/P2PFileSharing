@@ -9,22 +9,22 @@ public class FileManager {
 
     private boolean hasFile;
     private final PeerProcessConfig config;
-    private final int pieceSize;
-    private long fileSize = 0;
-    private int totalPieces = 0;
+    public static int pieceSize;
+    public static long fileSize = 0;
+    public static int totalPieces = 0;
     private FilePiece[] filePieces;
     int countPieces;
 
     public FileManager(PeerProcessConfig config, Peer peer) {
         this.config = config;
-        this.pieceSize = config.getPieceSize();
-        this.totalPieces = (int) Math.ceil(fileSize / pieceSize);
+        pieceSize = config.getPieceSize();
+        totalPieces = (int) Math.ceil(fileSize / pieceSize);
         filePieces = new FilePiece[totalPieces];
         if (peer.isHasFile()) {
             hasFile = true;
             filePieces = chunkFileIntoPieces(new File(config.getFileName()));
         }
-        this.fileSize = config.getFileSize();
+        fileSize = config.getFileSize();
     }
 
     public FilePiece[] chunkFileIntoPieces(File file) {

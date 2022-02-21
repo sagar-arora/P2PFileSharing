@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.BitSet;
 
 public class PeerConnection {
 
@@ -15,6 +16,7 @@ public class PeerConnection {
     private InputStream inputStream;
     private OutputStream outputStream;
     private boolean isHandshakeDone = false;
+    private BitSet fileSet;
 
     public PeerConnection(Socket socket) throws Exception {
         this(socket, -1);
@@ -39,12 +41,12 @@ public class PeerConnection {
         return remotePeerId;
     }
 
-    public void setRemotePeerId() {
-
+    public void setRemotePeerId(int peerId) {
+        this.remotePeerId = peerId;
     }
 
-    public void sendMessage(byte[] messageBytes) throws IOException {
-        outputStream.write(messageBytes);
+    public void sendMessage(Message message) throws IOException {
+        outputStream.write(message.getMessageBytes());
     }
 
     public Message checkForMessage() throws IOException {
@@ -57,5 +59,13 @@ public class PeerConnection {
         }
 
         return message;
+    }
+
+    public BitSet getFileSet() {
+        return fileSet;
+    }
+
+    public void setFileSet(BitSet fileSet) {
+        this.fileSet = fileSet;
     }
 }

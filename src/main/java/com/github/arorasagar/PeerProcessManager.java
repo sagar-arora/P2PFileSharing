@@ -1,11 +1,12 @@
 package com.github.arorasagar;
 
+import com.github.arorasagar.message.HandshakeMessage;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PeerProcessManager extends Thread {
@@ -15,11 +16,16 @@ public class PeerProcessManager extends Thread {
     private final Collection<RemotePeerInfo> remotePeerInfos;
     private volatile boolean notStopped = true;
     ConcurrentHashMap<PeerConnection, Boolean> connectionHandlerMap;
+    FileManager fileManager;
+    ConnectionManager connectionManager;
+    Collection<PeerConnection> peerConnections = new LinkedList<>();
 
     public PeerProcessManager(PeerProcessConfig peerProcessConfig, Peer peer, Collection<RemotePeerInfo> remotePeerInfos) {
         this.peerProcessConfig = peerProcessConfig;
         this.peer = peer;
         this.remotePeerInfos = remotePeerInfos;
+        this.fileManager = new FileManager(peerProcessConfig, peer);
+        this.connectionManager = new ConnectionManager(peerProcessConfig, peerConnections);
     }
 
     public void connectToOtherPeers() {
@@ -42,6 +48,7 @@ public class PeerProcessManager extends Thread {
         while(notStopped) {
             Socket socket = serverSocket.accept();
             PeerConnection peerConnection = new PeerConnection(socket, -1);
+            peerConnection.sendMessage(new HandshakeMessage(peer.getPeerId()));
             connectionHandlerMap.putIfAbsent(peerConnection, true);
         }
     }

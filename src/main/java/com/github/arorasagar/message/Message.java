@@ -61,6 +61,7 @@ public class Message {
     public static Message readMessageBytes(byte[] message) throws IOException {
 
         DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(message));
+
         int length = dataInputStream.readInt();
         int type = (int) dataInputStream.readByte();
         byte[] payload = new byte[length];
