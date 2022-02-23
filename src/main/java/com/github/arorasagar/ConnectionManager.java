@@ -1,6 +1,7 @@
 package com.github.arorasagar;
 
 import com.github.arorasagar.message.BitfieldMessage;
+import com.github.arorasagar.message.FieldMessage;
 import com.github.arorasagar.message.Message;
 import com.github.arorasagar.message.MessageType;
 
@@ -88,11 +89,25 @@ public class ConnectionManager extends Thread {
                             payload = message.getPayload();
                             index = new BigInteger(payload).intValue();
                             byte[] filePiece = fileManager.getFilePieceBy(index);
+                            byte[] fieldMessageByte = MessageUtils.convertToPieceMessageBytes(
+                                    peerConnection.getRemotePeerId(), filePiece);
                             if (filePiece != null) {
-
+                                linkedBlockingQueue.add(new PeerMessage(peerConnection, new FieldMessage(fieldMessageByte)));
                             } else {
                                 // something is wrong here, peer calculated wrong piece.
                                 // log
+                            }
+                            break;
+                        case FIELD:
+                            FieldMessage fieldMessage = (FieldMessage) message;
+                            try {
+                                index = fieldMessage.getIndex();
+                                byte[] fileByte = fieldMessage.getFileBytes();
+                                fileManager.updateFilePieceFromByte(index, fileByte);
+
+
+                            } catch (Exception e) {
+
                             }
                     }
 

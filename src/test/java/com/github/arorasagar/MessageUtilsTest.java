@@ -3,6 +3,7 @@ package com.github.arorasagar;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.BitSet;
 
 public class MessageUtilsTest {
@@ -30,5 +31,11 @@ public class MessageUtilsTest {
         BitSet bitSet = new BitSet(8);
         bitSet.set(1);
         Assert.assertEquals(2, MessageUtils.convertPayloadToInteger(bitSet.toByteArray()));
+    }
+
+    @Test
+    public void testByte() throws IOException {
+        byte[] b = MessageUtils.convertToPieceMessageBytes(1, new byte[]{0,0,0,1});
+        Assert.assertEquals(new String(new byte[]{0,0,0,1,0,0,0,1}), new String(b));
     }
 }

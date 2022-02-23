@@ -30,6 +30,13 @@ public class FileManager {
         fileSize = config.getFileSize();
     }
 
+    private File createTempFile(int index) throws IOException {
+        File tempFile = File.createTempFile("temp_", String.valueOf(index));
+        tempFile.deleteOnExit();
+
+        return tempFile;
+    }
+
     public FilePiece[] chunkFileIntoPieces(File file) {
         FilePiece[] filePieces = null;
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(file))) {
@@ -40,11 +47,11 @@ public class FileManager {
             int index = 0;
             for (int i = 0; i < totalPieces; i++) {
                 int bytesRead = bufferedInputStream.read(buffer, i * pieceSize, (i + 1) * pieceSize);
-                File tempFile = File.createTempFile("temp_",String.valueOf(index));
+                File tempFile = createTempFile(index);
                 try(BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(tempFile))) {
                     bufferedOutputStream.write(buffer, 0, bytesRead);
                 }
-                tempFile.deleteOnExit();
+                //tempFile.deleteOnExit();
                 filePieces[index] = new FilePiece(index, tempFile);
                 index++;
             }
@@ -78,6 +85,17 @@ public class FileManager {
 
     public void updateFilePiece(int index, FilePiece filePiece) {
         filePieces[index] = filePiece;
+        countPieces++;
+    }
+
+    public void updateFilePieceFromByte(int index, byte[] bytesFilePiece) throws IOException {
+        if (filePieces[index] != null) {
+            // log that this piece has already been updated.
+            return;
+        }
+        try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(createTempFile(index)))) {
+            bufferedOutputStream.write(bytesFilePiece);
+        }
         countPieces++;
     }
 
