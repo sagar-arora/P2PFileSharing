@@ -1,6 +1,8 @@
 package com.github.arorasagar;
 
 import java.io.*;
+import java.util.BitSet;
+import java.util.Optional;
 
 /**
  * FileManager class is responsible for maintain the pieces of the file.
@@ -23,6 +25,7 @@ public class FileManager {
         if (peer.isHasFile()) {
             hasFile = true;
             filePieces = chunkFileIntoPieces(new File(config.getFileName()));
+            countPieces = totalPieces;
         }
         fileSize = config.getFileSize();
     }
@@ -60,11 +63,17 @@ public class FileManager {
         return filePieces[index];
     }
 
-    public byte[] getFilePieceBy(int index) {
-    /*    FileInputStream fileInputStream = new FileInputStream();
-        return filePieces[index].;*/
-
-        return null;
+    public byte[] getFilePieceBy(int index) throws IOException {
+        FilePiece filePiece = getFilePiece(index);
+        if (filePiece == null) {
+            // log something is wrong/
+            return null;
+        }
+        byte[] b = null;
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(filePiece.getFile()))) {
+            b = bufferedInputStream.readAllBytes();
+        }
+        return b;
     }
 
     public void updateFilePiece(int index, FilePiece filePiece) {
@@ -82,5 +91,25 @@ public class FileManager {
 
     public int getTotalPieces() {
         return totalPieces;
+    }
+
+    public BitSet getBytesFromFilePieces() {
+        BitSet bitSet = new BitSet(getTotalPieces());
+        int i = 0;
+        for (FilePiece filePiece : getFilePieces()) {
+            if (filePiece != null) {
+                bitSet.set(i);
+            }
+            i++;
+        }
+
+        return bitSet;
+    }
+
+    public Optional<BitSet> fileSet() {
+        if (countPieces > 0) {
+            return Optional.of(getBytesFromFilePieces());
+        }
+        return Optional.empty();
     }
 }

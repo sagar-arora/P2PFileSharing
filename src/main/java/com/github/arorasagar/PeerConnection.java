@@ -1,6 +1,7 @@
 package com.github.arorasagar;
 
 import com.github.arorasagar.message.Message;
+import com.google.common.base.Objects;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.util.BitSet;
 
 public class PeerConnection {
 
-    private Socket socket;
+    private final Socket socket;
     private int remotePeerId;
     private InputStream inputStream;
     private OutputStream outputStream;
@@ -67,5 +68,48 @@ public class PeerConnection {
 
     public void setFileSet(BitSet fileSet) {
         this.fileSet = fileSet;
+    }
+
+    /**
+     *   @Override
+     *     public boolean equals(Object obj) {
+     *         if (obj == null) {
+     *             return false;
+     *         }
+     *
+     *         if (obj.getClass() != this.getClass()) {
+     *             return false;
+     *         }
+     *
+     *         final Person other = (Person) obj;
+     *         if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
+     *             return false;
+     *         }
+     *
+     *         if (this.age != other.age) {
+     *             return false;
+     *         }
+     *
+     *         return true;
+     *     }
+     *
+     *     @Override
+     *     public int hashCode() {
+     *         int hash = 3;
+     *         hash = 53 * hash + (this.name != null ? this.name.hashCode() : 0);
+     *         hash = 53 * hash + this.age;
+     *         return hash;
+     *     }
+     * @param obj
+     * @return
+     */
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+
+        PeerConnection peerConnection = (PeerConnection) obj;
+
+        return remotePeerId == peerConnection.remotePeerId && Objects.equal(this.socket, peerConnection.socket);
     }
 }

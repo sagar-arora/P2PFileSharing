@@ -25,7 +25,7 @@ public class PeerProcessManager extends Thread {
         this.peer = peer;
         this.remotePeerInfos = remotePeerInfos;
         this.fileManager = new FileManager(peerProcessConfig, peer);
-        this.connectionManager = new ConnectionManager(peerProcessConfig, peerConnections);
+        this.connectionManager = new ConnectionManager(peerProcessConfig, peerConnections, fileManager);
     }
 
     public void connectToOtherPeers() {

@@ -1,9 +1,12 @@
 package com.github.arorasagar;
 
+import com.github.arorasagar.message.BitfieldMessage;
 import com.github.arorasagar.message.Message;
 import com.github.arorasagar.message.MessageType;
 
+import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -17,7 +20,10 @@ public class ConnectionManager extends Thread {
     PeerProcessConfig peerProcessConfig;
     Map<Integer, PeerConnection> peerConnectionMap = new HashMap<>();
     LinkedBlockingQueue<PeerMessage> linkedBlockingQueue;
-    public ConnectionManager(PeerProcessConfig peerProcessConfig, Collection<PeerConnection> peerConnections) {
+    FileManager fileManager;
+    public ConnectionManager(PeerProcessConfig peerProcessConfig,
+                             Collection<PeerConnection> peerConnections,
+                             FileManager fileManager) {
         this.peerConnections = peerConnections;
         this.peerProcessConfig = peerProcessConfig;
     }
@@ -55,6 +61,10 @@ public class ConnectionManager extends Thread {
                             // sendBitField message if this peer has any pieces.
                             // sendMessage()
                             //linkedBlockingQueue.add(new PeerMessage());
+                            Optional<BitSet> fileSet = fileManager.fileSet();
+                            if (fileSet.isPresent()) {
+                                linkedBlockingQueue.add(new PeerMessage(peerConnection, new BitfieldMessage(fileSet.get())));
+                            }
                             break;
                         case BITFIELD:
                             payload = message.getPayload();
@@ -67,8 +77,23 @@ public class ConnectionManager extends Thread {
                         case NOT_INTERESTED:
                             //interestedConnections.add()
                             // check if the peer is in interest connections list, if so remove this peer from the list.
-                        case HAVE:
 
+                        case HAVE:
+                            payload = message.getPayload();
+                            int index = new BigInteger(payload).intValue();
+                            peerConnection.getFileSet().set(index);
+                            break;
+
+                        case REQUESTED:
+                            payload = message.getPayload();
+                            index = new BigInteger(payload).intValue();
+                            byte[] filePiece = fileManager.getFilePieceBy(index);
+                            if (filePiece != null) {
+
+                            } else {
+                                // something is wrong here, peer calculated wrong piece.
+                                // log
+                            }
                     }
 
 
