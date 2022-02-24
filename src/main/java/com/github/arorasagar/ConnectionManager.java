@@ -1,15 +1,14 @@
 package com.github.arorasagar;
 
-import com.github.arorasagar.message.BitfieldMessage;
-import com.github.arorasagar.message.FieldMessage;
-import com.github.arorasagar.message.Message;
-import com.github.arorasagar.message.MessageType;
+import com.github.arorasagar.message.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 
 // ma
 public class ConnectionManager extends Thread {
@@ -17,11 +16,16 @@ public class ConnectionManager extends Thread {
     // maintains a list of connections
     Collection<PeerConnection> peerConnections;
     // connections which are interested in the data from this peer.
-    Collection<PeerConnection> interestedConnections;
+    List<PeerConnection> interestedConnections;
+    Collection<DownloadRate> interestedConnectionsDownloadRate;
+
     PeerProcessConfig peerProcessConfig;
     Map<Integer, PeerConnection> peerConnectionMap = new HashMap<>();
     LinkedBlockingQueue<PeerMessage> linkedBlockingQueue;
     FileManager fileManager;
+
+    Set<PeerConnection> unchokedConnections = new HashSet<>();
+
     public ConnectionManager(PeerProcessConfig peerProcessConfig,
                              Collection<PeerConnection> peerConnections,
                              FileManager fileManager) {
@@ -29,11 +33,64 @@ public class ConnectionManager extends Thread {
         this.peerProcessConfig = peerProcessConfig;
     }
 
+    public void runThread() {
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Collections.sort(interestedConnections);
+
+                // pick n
+                int n = peerProcessConfig.getNumberOfPreferredNeighbors();
+
+                int index = 0;
+                List<PeerConnection> optimisticList = new ArrayList<>();
+                for (PeerConnection peerConnection : peerConnections) {
+                    if (index < n) {
+                        linkedBlockingQueue.add(new PeerMessage(peerConnection, new UnchokeMessage()));
+                    } else {
+                        //linkedBlockingQueue.add(new PeerMessage(peerConnection, new UnchokeMessage()));
+                        optimisticList.add(peerConnection);
+                    }
+                    index++;
+                }
+
+                Random random = new Random();
+                int randomIndex = random.nextInt(peerConnections.size());
+
+                PeerConnection optimisticPeer = optimisticList.remove(randomIndex);
+                linkedBlockingQueue.add(new PeerMessage(optimisticPeer, new UnchokeMessage()));
+
+                for (PeerConnection peerConnection : optimisticList) {
+                    linkedBlockingQueue.add(new PeerMessage(peerConnection, new ChokeMessage()));
+                }
+            }
+        }, 5, 10);
+    }
+
+    public void runRequestThread() {
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                // send request message at some regular interval.
+
+
+            }
+
+            }, 5, 10);
+    }
+
+
+
     public static class ChokingUnchoking implements Runnable {
 
         @Override
         public void run() {
             // logic for choking, unchoking.
+
 
         }
     }
@@ -105,10 +162,19 @@ public class ConnectionManager extends Thread {
                                 byte[] fileByte = fieldMessage.getFileBytes();
                                 fileManager.updateFilePieceFromByte(index, fileByte);
 
-
+                                HaveMessage haveMessage = new HaveMessage(index);
+                                linkedBlockingQueue.add(new PeerMessage(peerConnection, haveMessage));
                             } catch (Exception e) {
 
                             }
+                            break;
+                        case UNCHOKE:
+                            unchokedConnections.add(peerConnection);
+                           // find interesting pieces.
+                           // fileSet = peerConnection.getFileSet();
+                            int indexToAsk = MessageUtils.findRandomInterestedPiece(fileManager.getBytesFromFilePieces(),
+                                    peerConnection.getFileSet());
+
                     }
 
 

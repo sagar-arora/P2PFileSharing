@@ -8,7 +8,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
+import java.util.Random;
 
 public class MessageUtils {
 
@@ -73,5 +76,21 @@ public class MessageUtils {
         dataOutputStream.flush();
 
         return byteArrayOutputStream.toByteArray();
+    }
+
+    public static int findRandomInterestedPiece(BitSet myBitSet, BitSet peerBitSet) {
+        int n = myBitSet.length();
+        List<Integer> indexes = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            boolean myBit = myBitSet.get(i);
+            boolean peerBit = peerBitSet.get(i);
+            if (!myBit && peerBit) {
+                indexes.add(i);
+            }
+        }
+
+        Random random = new Random();
+        int randIndex = random.nextInt(indexes.size());
+        return indexes.get(randIndex);
     }
 }

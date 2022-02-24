@@ -16,18 +16,22 @@ public class FileManager {
     public static int totalPieces = 0;
     private FilePiece[] filePieces;
     int countPieces;
+    private BitSet fileSet;
 
     public FileManager(PeerProcessConfig config, Peer peer) {
         this.config = config;
         pieceSize = config.getPieceSize();
+        fileSize = config.getFileSize();
         totalPieces = (int) Math.ceil(fileSize / pieceSize);
         filePieces = new FilePiece[totalPieces];
+        fileSet = new BitSet(totalPieces);
         if (peer.isHasFile()) {
             hasFile = true;
             filePieces = chunkFileIntoPieces(new File(config.getFileName()));
+            fileSet = new BitSet(totalPieces);
+            fileSet.set(0, totalPieces);
             countPieces = totalPieces;
         }
-        fileSize = config.getFileSize();
     }
 
     private File createTempFile(int index) throws IOException {
@@ -85,6 +89,7 @@ public class FileManager {
 
     public void updateFilePiece(int index, FilePiece filePiece) {
         filePieces[index] = filePiece;
+        fileSet.set(index);
         countPieces++;
     }
 
@@ -112,16 +117,7 @@ public class FileManager {
     }
 
     public BitSet getBytesFromFilePieces() {
-        BitSet bitSet = new BitSet(getTotalPieces());
-        int i = 0;
-        for (FilePiece filePiece : getFilePieces()) {
-            if (filePiece != null) {
-                bitSet.set(i);
-            }
-            i++;
-        }
-
-        return bitSet;
+        return fileSet;
     }
 
     public Optional<BitSet> fileSet() {

@@ -1,6 +1,7 @@
 package com.github.arorasagar;
 
 import com.github.arorasagar.message.Message;
+import com.github.arorasagar.message.MessageType;
 import com.google.common.base.Objects;
 
 import java.io.BufferedInputStream;
@@ -10,7 +11,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.BitSet;
 
-public class PeerConnection {
+public class PeerConnection implements Comparable<PeerConnection> {
 
     private final Socket socket;
     private int remotePeerId;
@@ -18,7 +19,7 @@ public class PeerConnection {
     private OutputStream outputStream;
     private boolean isHandshakeDone = false;
     private BitSet fileSet;
-
+    private DownloadRate downloadRate;
     public PeerConnection(Socket socket) throws Exception {
         this(socket, -1);
     }
@@ -28,6 +29,7 @@ public class PeerConnection {
         this.remotePeerId = remotePeerId;
         this.inputStream = socket.getInputStream();
         this.outputStream = socket.getOutputStream();
+        this.downloadRate = new DownloadRate(0);
     }
 
     public boolean isHandshakeDone() {
@@ -46,8 +48,18 @@ public class PeerConnection {
         this.remotePeerId = peerId;
     }
 
+    public DownloadRate getDownloadRate() {
+        return this.downloadRate;
+    }
+
     public void sendMessage(Message message) throws IOException {
+        long timeStart = System.currentTimeMillis();
         outputStream.write(message.getMessageBytes());
+        long timeEnd = System.currentTimeMillis();
+
+        if (message.getMessageType() == MessageType.FIELD) {
+            downloadRate = new DownloadRate(message.getLength(),timeEnd - timeStart);
+        }
     }
 
     public Message checkForMessage() throws IOException {
@@ -111,5 +123,10 @@ public class PeerConnection {
         PeerConnection peerConnection = (PeerConnection) obj;
 
         return remotePeerId == peerConnection.remotePeerId && Objects.equal(this.socket, peerConnection.socket);
+    }
+
+    @Override
+    public int compareTo(PeerConnection o) {
+        return DownloadRate.compare(this.downloadRate, o.getDownloadRate());
     }
 }
