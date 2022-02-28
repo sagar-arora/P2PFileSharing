@@ -8,19 +8,19 @@ import java.util.List;
 
 public class PeerProcessConfig {
 
-    private int numberOfPreferredNeighbors;
-    private int unchokingInterval;
-    private int optimisticUnchokingInterval;
+    private Integer numberOfPreferredNeighbors;
+    private Integer unchokingInterval;
+    private Integer optimisticUnchokingInterval;
     private String fileName;
-    private int fileSize;
-    private int pieceSize;
+    private Integer fileSize;
+    private Integer pieceSize;
     private List<Peer> peers;
 
     public PeerProcessConfig() {
 
     }
 
-    public int getNumberOfPreferredNeighbors() {
+    public Integer getNumberOfPreferredNeighbors() {
         return numberOfPreferredNeighbors;
     }
 
@@ -28,7 +28,7 @@ public class PeerProcessConfig {
         this.numberOfPreferredNeighbors = numberOfPreferredNeighbors;
     }
 
-    public int getUnchokingInterval() {
+    public Integer getUnchokingInterval() {
         return unchokingInterval;
     }
 
@@ -36,7 +36,7 @@ public class PeerProcessConfig {
         this.unchokingInterval = unchokingInterval;
     }
 
-    public int getOptimisticUnchokingInterval() {
+    public Integer getOptimisticUnchokingInterval() {
         return optimisticUnchokingInterval;
     }
 
@@ -52,7 +52,7 @@ public class PeerProcessConfig {
         this.fileName = fileName;
     }
 
-    public int getFileSize() {
+    public Integer getFileSize() {
         return fileSize;
     }
 
@@ -60,7 +60,7 @@ public class PeerProcessConfig {
         this.fileSize = fileSize;
     }
 
-    public int getPieceSize() {
+    public Integer getPieceSize() {
         return pieceSize;
     }
 
@@ -86,6 +86,29 @@ public class PeerProcessConfig {
 
         if (peerProcessConfig.getPeers() == null) {
             throw new InvalidFileException("peer list is empty.");
+        }
+
+        if (peerProcessConfig.getNumberOfPreferredNeighbors() == null) {
+            throw new InvalidFileException("numPreferredNeighbors is null.");
+        }
+
+        if (peerProcessConfig.getFileSize() == null) {
+            throw new InvalidFileException("fileSize is null.");
+        }
+
+        if (peerProcessConfig.getPieceSize() == null) {
+            throw new InvalidFileException("pieceSize is null.");
+        }
+
+        if (peerProcessConfig.getUnchokingInterval() == null) {
+            throw new InvalidFileException("pieceSize is null.");
+        }
+
+        //getOptimisticUnchokingInterval
+
+
+        if (peerProcessConfig.getOptimisticUnchokingInterval() == null) {
+            throw new InvalidFileException("pieceSize is null.");
         }
 
         return peerProcessConfig;

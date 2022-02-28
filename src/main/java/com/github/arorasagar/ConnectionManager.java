@@ -1,8 +1,10 @@
 package com.github.arorasagar;
 
 import com.github.arorasagar.message.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+//import org.slf4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
@@ -14,7 +16,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class ConnectionManager extends Thread {
 
     // maintains a list of connections
-    Collection<PeerConnection> peerConnections;
+    List<PeerConnection> peerConnections;
     // connections which are interested in the data from this peer.
     List<PeerConnection> interestedConnections;
     Collection<DownloadRate> interestedConnectionsDownloadRate;
@@ -24,13 +26,20 @@ public class ConnectionManager extends Thread {
     LinkedBlockingQueue<PeerMessage> linkedBlockingQueue;
     FileManager fileManager;
 
+    Logger LOGGER = LogManager.getLogger(ConnectionManager.class);
+
     Set<PeerConnection> unchokedConnections = new HashSet<>();
 
+    int myPeerId;
+
     public ConnectionManager(PeerProcessConfig peerProcessConfig,
-                             Collection<PeerConnection> peerConnections,
-                             FileManager fileManager) {
+                             List<PeerConnection> peerConnections,
+                             FileManager fileManager,
+                             Peer peer) {
         this.peerConnections = peerConnections;
         this.peerProcessConfig = peerProcessConfig;
+        this.fileManager = fileManager;
+        this.myPeerId = peer.getPeerId();
     }
 
     public void runThread() {
@@ -77,29 +86,20 @@ public class ConnectionManager extends Thread {
             public void run() {
                 // send request message at some regular interval.
 
+                for (PeerConnection peerConnection : unchokedConnections) {
+                    int pieceToRequest = MessageUtils.findRandomInterestedPiece(fileManager.getBytesFromFilePieces(),
+                            peerConnection.getFileSet());
 
+                    linkedBlockingQueue.add(new PeerMessage(peerConnection, new RequestMessage(pieceToRequest)));
+                }
             }
-
-            }, 5, 10);
-    }
-
-
-
-    public static class ChokingUnchoking implements Runnable {
-
-        @Override
-        public void run() {
-            // logic for choking, unchoking.
-
-
-        }
+            }, 5, 2);
     }
 
     public synchronized void addConnection(PeerConnection peerConnection) {
         this.peerConnections.add(peerConnection);
     }
 
-    // listen to messages coming from the peers.
     @Override
     public void run() {
 
@@ -114,17 +114,17 @@ public class ConnectionManager extends Thread {
                         case HANDSHAKE:
                             byte[] payload = message.getPayload();
                             int remotePeerId = MessageUtils.convertPayloadToInteger(payload);
-                            //peerConnectionMap.put(remotePeerId, peerConnection);
+
+                            LOGGER.info("[{}] Received handshake message from remote peer : {}", myPeerId, remotePeerId);
                             peerConnection.setRemotePeerId(remotePeerId);
-                            // sendBitField message if this peer has any pieces.
-                            // sendMessage()
-                            //linkedBlockingQueue.add(new PeerMessage());
                             Optional<BitSet> fileSet = fileManager.fileSet();
                             if (fileSet.isPresent()) {
+                                LOGGER.info("[{}] Sending bitfield message to remote peer: {}", myPeerId, remotePeerId);
                                 linkedBlockingQueue.add(new PeerMessage(peerConnection, new BitfieldMessage(fileSet.get())));
                             }
                             break;
                         case BITFIELD:
+                            LOGGER.info("[{}] Received Bitfield message from remote peer : {}", myPeerId, peerConnection.getRemotePeerId());
                             payload = message.getPayload();
                             BitSet bitSet = MessageUtils.getFileBitSetFromBytes(FileManager.totalPieces, payload);
                             peerConnection.setFileSet(bitSet);
@@ -170,14 +170,8 @@ public class ConnectionManager extends Thread {
                             break;
                         case UNCHOKE:
                             unchokedConnections.add(peerConnection);
-                           // find interesting pieces.
-                           // fileSet = peerConnection.getFileSet();
-                            int indexToAsk = MessageUtils.findRandomInterestedPiece(fileManager.getBytesFromFilePieces(),
-                                    peerConnection.getFileSet());
 
                     }
-
-
                 } catch (IOException e) {
                     // log error reading the message.
                 }
@@ -187,10 +181,6 @@ public class ConnectionManager extends Thread {
 
 
     public class SendMessageThread extends Thread {
-
-        SendMessageThread() {
-            //this.linkedBlockingQueue = peerMessages;
-        }
 
         @Override
         public void run() {

@@ -12,8 +12,11 @@ public class ActiveThread implements Runnable {
         this.messages = messages;
     }
 
+    public synchronized void send(Message message) {
+        messages.add(message);
+    }
+
     @Override
     public void run() {
-
     }
 }

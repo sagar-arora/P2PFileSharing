@@ -1,38 +1,70 @@
 package com.github.arorasagar;
 
 import com.github.arorasagar.message.HandshakeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PeerProcessManager extends Thread {
 
-    PeerProcessConfig peerProcessConfig;
-    Peer peer;
-    private final Collection<RemotePeerInfo> remotePeerInfos;
-    private volatile boolean notStopped = true;
+    private final PeerProcessConfig peerProcessConfig;
+    private final Peer peer;
+    private final Collection<RemotePeerInfo> remotePeersAlreadyRunning;
+    private volatile boolean running = true;
     ConcurrentHashMap<PeerConnection, Boolean> connectionHandlerMap;
-    FileManager fileManager;
-    ConnectionManager connectionManager;
-    Collection<PeerConnection> peerConnections = new LinkedList<>();
+    private final FileManager fileManager;
+    private final ConnectionManager connectionManager;
+    List<PeerConnection> peerConnections = Collections.synchronizedList(new ArrayList<>());
 
-    public PeerProcessManager(PeerProcessConfig peerProcessConfig, Peer peer, Collection<RemotePeerInfo> remotePeerInfos) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PeerProcessManager.class);
+
+    public PeerProcessManager(PeerProcessConfig peerProcessConfig,
+                              Peer peer,
+                              Collection<RemotePeerInfo> remotePeersAlreadyRunning) {
         this.peerProcessConfig = peerProcessConfig;
         this.peer = peer;
-        this.remotePeerInfos = remotePeerInfos;
+        this.remotePeersAlreadyRunning = remotePeersAlreadyRunning;
         this.fileManager = new FileManager(peerProcessConfig, peer);
-        this.connectionManager = new ConnectionManager(peerProcessConfig, peerConnections, fileManager);
+        this.connectionManager = new ConnectionManager(peerProcessConfig, peerConnections, fileManager, peer);
     }
 
     public void connectToOtherPeers() {
+
+        LOGGER.info("[{}] Starting thread to previously running peers.", peer.getPeerId());
+
         new Thread(new Runnable() {
             @Override
             public void run() {
 
+                LinkedList<RemotePeerInfo> remotePeerInfoList = new LinkedList<>(remotePeersAlreadyRunning);
+                while (remotePeerInfoList.size() > 0) {
+                    RemotePeerInfo remotePeerInfo = remotePeerInfoList.poll();
+                    Socket socket = null;
+                    try {
+                         socket = new Socket(remotePeerInfo.address, remotePeerInfo.port);
+                    } catch (IOException e) {
+                        LOGGER.error("[{}] Error occurred while creating socket connection : {}", peer.peerId, e);
+                    }
+
+                    if (socket != null) {
+                        try {
+                            LOGGER.error("[{}] Successfully created the socket with remote peer: {}:{}",
+                                    peer.peerId, remotePeerInfo.peerId, remotePeerInfo.port);
+                            connectionHandlerMap.putIfAbsent(new PeerConnection(socket), true);
+                        } catch (Exception e) {
+                            LOGGER.error("[{}] Error occurred while creating socket connection : {}", peer.peerId, e);
+                            remotePeerInfoList.offer(remotePeerInfo);
+                        }
+                    } else {
+                        // keep trying
+                        remotePeerInfoList.offer(remotePeerInfo);
+                    }
+                }
             }
         }).start();
     }
@@ -44,12 +76,14 @@ public class PeerProcessManager extends Thread {
      * @throws IOException
      */
     public void startServer() throws Exception {
+        LOGGER.info("Starting the server on the port : {}", peer.getPort());
         ServerSocket serverSocket = new ServerSocket(peer.getPort());
-        while(notStopped) {
+        while (running) {
             Socket socket = serverSocket.accept();
             PeerConnection peerConnection = new PeerConnection(socket, -1);
             peerConnection.sendMessage(new HandshakeMessage(peer.getPeerId()));
             connectionHandlerMap.putIfAbsent(peerConnection, true);
+            peerConnections.add(peerConnection);
         }
     }
 

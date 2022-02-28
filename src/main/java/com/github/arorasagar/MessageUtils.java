@@ -22,13 +22,8 @@ public class MessageUtils {
 
     public static BitSet getFileBitSetFromBytes(int n, byte[] fileBytes) {
         BitSet bitSet = new BitSet(n);
-
-        //new BitSet()
         int index = 0;
         for (byte fileByte : fileBytes) {
-            //   0 1 1 0 1 1 1 0
-            // & 1 1 1 1 1 1 1 1
-            // = 0 1 1 0 1 1 1 0
             int temp = 1;
             int byteVal = fileByte;
             for (int i = 0; i < 8; i++) {
